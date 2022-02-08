@@ -10,7 +10,10 @@
   },
   "author": "Zim",
   "peerDependencies": {
-    "@types/events": "^3.0.0",
-    "events": "^3.3.0"
+    "@types/events": "^3.0.0"
+  },
+  "dependencies": {
+    "coroutine-locks": "github:zimtsui/coroutine-locks",
+    "deque": "github:zimtsui/deque"
   }
 }
