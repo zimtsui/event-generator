@@ -3,22 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventGenerator = void 0;
 const coroutine_locks_1 = require("coroutine-locks");
 const deque_1 = require("deque");
-class Wake extends Error {
-    constructor() { super('wake'); }
-}
 async function* EventGenerator(emitter, event) {
-    const queue = (0, deque_1.Deque)();
+    const queue = deque_1.Deque.create();
     const semaphore = new coroutine_locks_1.Semaphore();
-    function listener(...payload) {
+    function listener(payload) {
         queue.push(payload);
         semaphore.v();
     }
     emitter.on(event, listener);
-    emitter.once('error', () => {
-        semaphore.throw(new Wake());
+    emitter.once('error', err => {
+        semaphore.throw(err);
     });
     try {
-        for (;;) {
+        while (true) {
             await semaphore.p();
             yield queue.shift();
         }

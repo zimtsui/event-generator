@@ -1,27 +1,24 @@
 import { EventEmitter } from 'events';
 import { Semaphore } from 'coroutine-locks';
-import { Deque } from 'deque';
+import { Deque, ElementType } from 'deque';
 
-class Wake extends Error {
-	constructor() { super('wake'); }
-}
 
-export async function* EventGenerator<Payload extends unknown[]>(
+export async function* EventGenerator<Payload extends ElementType>(
 	emitter: EventEmitter,
 	event: Parameters<EventEmitter['on']>[0],
-): AsyncGenerator<Payload> {
-	const queue = Deque<any>();
+): AsyncGenerator<Payload, void> {
+	const queue = Deque.create<Payload>();
 	const semaphore = new Semaphore();
-	function listener(...payload: any[]): void {
+	function listener(payload: Payload): void {
 		queue.push(payload);
 		semaphore.v();
 	}
 	emitter.on(event, listener);
-	emitter.once('error', () => {
-		semaphore.throw(new Wake());
+	emitter.once('error', err => {
+		semaphore.throw(err);
 	});
 	try {
-		for (; ;) {
+		while (true) {
 			await semaphore.p();
 			yield queue.shift();
 		}
